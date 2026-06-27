@@ -1,0 +1,42 @@
+.bp-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(180deg, var(--blue-top), var(--blue-bottom));
+}
+
+.bp-loading__mark {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: clamp(40px, 9vw, 76px);
+  color: var(--ink);
+  filter: var(--bloom-filter);
+  animation: bp-pulse 1.8s ease-in-out infinite;
+}
+
+.bp-loading__sub {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+@keyframes bp-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-loading__mark {
+    animation: none;
+  }
+}
