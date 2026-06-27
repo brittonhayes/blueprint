@@ -44,12 +44,26 @@ a {
   border-radius: 4px;
 }
 
-/* Glass surface mixin, applied via .glass. */
+/* Glass surface mixin, applied via .glass.
+
+   The frosted `backdrop-filter: blur()` is desktop-only. On mobile it's a
+   reliable tab-killer: both iOS Safari and Firefox on Android crash the GPU
+   compositor when a blur backdrop has to continuously re-sample filtered
+   canvas content behind it — which is exactly what happens once you draw a
+   glowing stroke under the dock. So we gate the blur behind a hover + fine-
+   pointer query (desktop) and fall back to a more opaque solid fill on touch
+   devices, which reads almost the same without the per-frame GPU cost. */
 .glass {
-  background: var(--glass);
+  background: var(--glass-strong);
   border: 1px solid var(--hairline);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    backdrop-filter: blur(12px) saturate(1.2);
+  }
 }
 
 /* Screen-reader only. */

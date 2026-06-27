@@ -1,18 +1,27 @@
 /* Bloom — the 2005 broadcast sheen (CSS-filter layer).
 
-   A stacked drop-shadow + brightness on the live shapes layer. White-on-blue
-   strokes pick up a soft halo that's brightest where strokes cluster. It's the
-   only glow source — per-shape shadows are removed elsewhere. Toggled by the
-   data-glow attribute on the editor container so there's no wrapper to keep in
-   sync with the canvas. */
+   A stacked drop-shadow + brightness on the live shapes. White-on-blue
+   strokes pick up a soft halo. It's the only glow source — per-shape shadows
+   are removed elsewhere. Toggled by the data-glow attribute on the editor
+   container so there's no wrapper to keep in sync with the canvas.
 
-.bp-editor[data-glow='true'] .tl-shapes {
+   The filter is applied per-shape (.tl-shape), NOT to the whole .tl-shapes
+   container. tldraw's .tl-shapes spans the union bounding box of every shape
+   on the page, so filtering it forces the browser to allocate one offscreen
+   buffer the size of the entire drawing and re-rasterize it on every pointer
+   move. At a phone's devicePixelRatio of 3 that buffer balloons past iOS
+   Safari's GPU memory ceiling and the WebKit content process is killed —
+   the tab goes blank mid-stroke. Filtering each .tl-shape instead caps every
+   buffer to a single shape's bounds, which keeps the look identical while
+   staying well within budget. */
+
+.bp-editor[data-glow='true'] .tl-shapes > .tl-shape {
   filter: var(--bloom-filter);
   transition: filter 220ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bp-editor[data-glow='true'] .tl-shapes {
+  .bp-editor[data-glow='true'] .tl-shapes > .tl-shape {
     transition: none;
   }
 }
