@@ -45,7 +45,7 @@ src/
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173/tldraw-blueprints/
+npm run dev        # http://localhost:5173/blueprint/
 npm run build      # type-check + production build to dist/
 npm run preview    # serve the production build
 ```
@@ -58,9 +58,9 @@ publishes `dist/` to Pages. To enable it:
 1. In the repo, go to **Settings → Pages**.
 2. Set **Source** to **GitHub Actions**.
 3. Push to `main` (or run the workflow manually). The site publishes at
-   `https://<owner>.github.io/tldraw-blueprints/`.
+   `https://brittonhayes.github.io/blueprint/`.
 
-The Vite `base` is `/tldraw-blueprints/` to match the project‑pages path. For a
+The Vite `base` is `/blueprint/` to match the project‑pages path. For a
 custom domain or a different path, set `BASE_PATH` when building, e.g.
 `BASE_PATH=/ npm run build`.
 
