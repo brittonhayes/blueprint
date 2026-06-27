@@ -1,0 +1,28 @@
+.bp-editor {
+  touch-action: none;
+  background: var(--blue-bottom);
+}
+
+/* Empty-state invitation. Centered, faint, hand-lettered; non-interactive so
+   the first stroke lands underneath it. */
+.bp-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-family: var(--font-hand);
+  font-weight: 500;
+  font-size: clamp(28px, 6vw, 44px);
+  color: var(--ink);
+  opacity: 0.22;
+  filter: var(--bloom-filter);
+  user-select: none;
+}
+
+/* Keep tldraw's own canvas background transparent so our Background shows. */
+.bp-editor .tl-background {
+  background: transparent !important;
+}

@@ -1,0 +1,34 @@
+/* White-only ink + handwritten font, scoped to the editor.
+
+   Forces every color-bearing built-in shape (draw strokes, typed text) to the
+   single --ink white. Custom shapes render their own inline white SVG inside
+   .tl-html-container and are deliberately NOT matched here. */
+
+.bp-editor {
+  /* Typed labels and draw-font text become handwritten Caveat. */
+  --tl-font-draw: var(--font-hand);
+  --tl-font-sans: var(--font-sans);
+}
+
+/* Pen strokes: perfect-freehand renders a filled outline path. White fill. */
+.bp-editor .tl-shapes .tl-svg-container path {
+  fill: var(--ink);
+}
+
+/* Typed text shapes (HTML/rich text). White, handwritten. */
+.bp-editor .tl-shapes .tl-text-label,
+.bp-editor .tl-shapes .tl-text-content,
+.bp-editor .tl-shapes .tl-rich-text,
+.bp-editor .tl-shapes .tl-rich-text-content,
+.bp-editor .tl-shapes .tl-text-input,
+.bp-editor .tl-shapes .tl-text {
+  color: var(--ink) !important;
+  fill: var(--ink) !important;
+  font-family: var(--font-hand) !important;
+  font-weight: 500 !important;
+}
+
+/* No drop-shadows on shapes — bloom is the only glow source. */
+.bp-editor .tl-shapes * {
+  text-shadow: none;
+}

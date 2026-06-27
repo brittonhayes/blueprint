@@ -1,0 +1,18 @@
+/* Bloom — the 2005 broadcast sheen (CSS-filter layer).
+
+   A stacked drop-shadow + brightness on the live shapes layer. White-on-blue
+   strokes pick up a soft halo that's brightest where strokes cluster. It's the
+   only glow source — per-shape shadows are removed elsewhere. Toggled by the
+   data-glow attribute on the editor container so there's no wrapper to keep in
+   sync with the canvas. */
+
+.bp-editor[data-glow='true'] .tl-shapes {
+  filter: var(--bloom-filter);
+  transition: filter 220ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-editor[data-glow='true'] .tl-shapes {
+    transition: none;
+  }
+}
