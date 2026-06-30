@@ -1,11 +1,11 @@
 /**
- * A static hand-drawn suspension-bridge plate for the hero — white chalk on
+ * A static hand-drawn suspension-bridge plate for the hero — silver sharpie on
  * the blue field, echoing the Breakstep reference. Rendered as inline SVG so
  * the landing page never has to boot the tldraw bundle. Bloom is applied via
  * the .bp-hero__plate filter in CSS.
  */
 export function HeroPlate() {
-  const ink = '#f3f6f8'
+  const ink = '#c6ccd1'
   const s = {
     fill: 'none',
     stroke: ink,

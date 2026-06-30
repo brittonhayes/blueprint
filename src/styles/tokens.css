@@ -21,8 +21,8 @@
   --blue-top: #34618d;
   --blue-bottom: #2c567d;
 
-  /* The single white. White-only product; there is no color picker. */
-  --ink: #f3f6f8;
+  /* The single silver. Silver‑sharpie product; there is no color picker. */
+  --ink: #c6ccd1;
 
   /* Fine paper grain so the blue never reads as a clean digital fill. */
   --paper-grain-light: rgba(255, 255, 255, 0.04);

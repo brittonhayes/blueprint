@@ -28,8 +28,8 @@ export function Hero() {
 
         <h1 className="bp-hero__mark">BLUEPRINT</h1>
         <p className="bp-hero__line">
-          Sketch architecture and engineering plates in glowing white chalk on
-          blueprint blue.
+          Sketch architecture and engineering plates in glowing silver sharpie
+          on blueprint blue.
         </p>
         <button className="bp-hero__cta" onClick={start}>
           Start a plate
