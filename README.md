@@ -1,6 +1,6 @@
 # BLUEPRINT
 
-Sketch architecture and engineering plates in glowing white chalk on blueprint
+Sketch architecture and engineering plates in glowing silver sharpie on blueprint
 blue. A small, opinionated drafting surface in the style of the original M5
 Industries / MythBusters plates, with a soft mid‑2000s broadcast bloom.
 
@@ -11,8 +11,8 @@ by a branded dock and top bar.
 
 ## What it does
 
-- **White‑chalk drawing** on a grained blueprint‑blue field — pressure‑aware
-  freehand, no grid, no color picker (white only).
+- **Silver‑sharpie drawing** on a grained blueprint‑blue field — pressure‑aware
+  freehand, no grid, no color picker (silver only).
 - **Diagram primitives** that keep the hand‑drawn look but behave like real
   vector shapes: a **dimension line** (end ticks + editable measurement), a
   **leader callout** (label + arrow to a draggable target), and a **numbered

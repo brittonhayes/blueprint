@@ -1,7 +1,7 @@
-/* White-only ink + handwritten font, scoped to the editor.
+/* Silver-only ink + handwritten font, scoped to the editor.
 
    Forces every color-bearing built-in shape (draw strokes, typed text) to the
-   single --ink white. Custom shapes render their own inline white SVG inside
+   single --ink silver. Custom shapes render their own inline silver SVG inside
    .tl-html-container and are deliberately NOT matched here. */
 
 .bp-editor {

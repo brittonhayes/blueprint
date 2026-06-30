@@ -1,4 +1,5 @@
 import type { Editor } from 'tldraw'
+import { INK_COLOR } from '../canvas/blueprintTheme'
 
 interface ExportOptions {
   glow: boolean
@@ -29,16 +30,16 @@ export async function exportPng(editor: Editor, opts: ExportOptions) {
   const h = ink.naturalHeight
 
   // tldraw exports built-in shapes (pen strokes) in their theme color, which
-  // bypasses our live white-ink CSS. Recolor the whole ink layer to the single
-  // white by using the export purely as an alpha mask. Custom shapes (already
-  // white) are unchanged; dark pen strokes become white.
-  const inkWhite = document.createElement('canvas')
-  inkWhite.width = w
-  inkWhite.height = h
-  const wc = inkWhite.getContext('2d')!
+  // bypasses our live silver-ink CSS. Recolor the whole ink layer to the single
+  // silver by using the export purely as an alpha mask. Custom shapes (already
+  // silver) are unchanged; dark pen strokes become silver.
+  const inkSilver = document.createElement('canvas')
+  inkSilver.width = w
+  inkSilver.height = h
+  const wc = inkSilver.getContext('2d')!
   wc.drawImage(ink, 0, 0)
   wc.globalCompositeOperation = 'source-in'
-  wc.fillStyle = '#f3f6f8'
+  wc.fillStyle = INK_COLOR
   wc.fillRect(0, 0, w, h)
 
   const canvas = document.createElement('canvas')
@@ -53,14 +54,14 @@ export async function exportPng(editor: Editor, opts: ExportOptions) {
     ctx.save()
     ctx.globalCompositeOperation = 'lighter'
     ctx.filter = 'blur(7px) brightness(1.7)'
-    ctx.drawImage(inkWhite, 0, 0)
+    ctx.drawImage(inkSilver, 0, 0)
     ctx.filter = 'blur(2px) brightness(1.5)'
-    ctx.drawImage(inkWhite, 0, 0)
+    ctx.drawImage(inkSilver, 0, 0)
     ctx.restore()
   }
 
   // Sharp ink on top.
-  ctx.drawImage(inkWhite, 0, 0)
+  ctx.drawImage(inkSilver, 0, 0)
 
   const out = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/png'),
@@ -91,11 +92,11 @@ function paintField(ctx: CanvasRenderingContext2D, w: number, h: number) {
 
 function paintFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const inset = 40
-  ctx.strokeStyle = 'rgba(243,246,248,0.55)'
+  ctx.strokeStyle = 'rgba(198,204,209,0.55)'
   ctx.lineWidth = 2
   ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2)
 
-  ctx.strokeStyle = 'rgba(243,246,248,0.7)'
+  ctx.strokeStyle = 'rgba(198,204,209,0.7)'
   const targets: Array<[number, number]> = [
     [inset, inset],
     [w - inset, inset],
