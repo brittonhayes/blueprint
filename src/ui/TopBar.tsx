@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useEditor } from 'tldraw'
+import { useEditor } from '../canvas/react'
 import { useBlueprintUI } from '../canvas/BlueprintContext'
 import { exportPng } from '../export/exportPng'
 import { ExportIcon } from './icons'

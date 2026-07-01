@@ -20,7 +20,7 @@ for (const href of [CAVEAT_URL, INTER_URL]) {
   document.head.appendChild(link)
 }
 
-// The editor pulls in the whole tldraw bundle — keep it off the hero's
+// The editor pulls in the canvas + shape code — keep it off the hero's
 // critical path.
 const Editor = lazy(() =>
   import('./pages/Editor').then((m) => ({ default: m.Editor })),

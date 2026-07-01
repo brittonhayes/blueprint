@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useEditor, useValue } from 'tldraw'
+import { useEditor, useValue } from '../canvas/react'
 import { useBlueprintUI } from '../canvas/BlueprintContext'
 import { insertCustomShape, clearPage } from '../lib/editorActions'
 import { exportPng } from '../export/exportPng'

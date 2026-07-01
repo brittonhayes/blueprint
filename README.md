@@ -4,8 +4,8 @@ Sketch architecture and engineering plates in glowing silver sharpie on blueprin
 blue. A small, opinionated drafting surface in the style of the original M5
 Industries / MythBusters plates, with a soft mid‑2000s broadcast bloom.
 
-Built on the [tldraw](https://tldraw.dev) SDK with its default UI fully replaced
-by a branded dock and top bar.
+Built on a small, self-contained canvas editor — no drawing SDK, no license
+key — with a branded dock and top bar.
 
 ![A glowing blueprint sketch of a suspension bridge](docs/hero.png)
 
@@ -24,18 +24,23 @@ by a branded dock and top bar.
   targets, for the full M5 plate look.
 - **Export** — client‑side PNG (`blueprint.png`) with the blue field, ink, and
   bloom composited in.
-- **Auto‑save** to the browser via tldraw's local persistence; reload‑safe.
+- **Auto‑save** to the browser via `localStorage`; reload‑safe.
 
 ## Tech
 
-React + TypeScript + Vite, tldraw v5, `HashRouter`. Fonts (Caveat, Inter) and
-all tldraw assets are self‑hosted — the site has no runtime CDN dependency.
+React + TypeScript + Vite, `HashRouter`. The drafting surface is a purpose‑built
+canvas editor: a flat list of shapes rendered into a single camera‑transformed
+layer, with its own pointer hit‑testing, undo history, and a small
+pressure‑aware freehand engine. No third‑party drawing SDK. Fonts (Caveat,
+Inter) are self‑hosted — the site has no runtime CDN dependency.
 
 ```
 src/
   pages/        Hero (landing) and Editor (lazy-loaded canvas route)
-  canvas/       background, white-ink override, components map, self-hosted assets
-  shapes/       custom ShapeUtils: dimension line, leader callout, part list
+  canvas/       editor store, React bindings, canvas + shape views,
+                camera/geometry, freehand engine, blueprint field
+  shapes/       shape defs (geometry, render, export): draw, text, dimension
+                line, leader callout, part list
   ui/           floating dock, top bar, icons
   bloom/        CSS-filter bloom
   export/       PNG export with bloom + field baked in
@@ -66,7 +71,6 @@ custom domain or a different path, set `BASE_PATH` when building, e.g.
 
 ## Notes
 
-- The small "Get a license for production" badge in the editor is tldraw's
-  watermark for unlicensed use. Add a [tldraw license
-  key](https://tldraw.dev/installation#License-key) via the `licenseKey` prop on
-  `<Tldraw>` in `src/pages/Editor.tsx` to remove it.
+- Keyboard shortcuts: `d` pen, `e` eraser, `t` text, `v` select; `⌘/Ctrl+Z`
+  undo, `⇧⌘/Ctrl+Z` (or `Ctrl+Y`) redo; `Delete` removes the selection. Hold
+  `Space` to pan; scroll/pinch to pan and zoom.

@@ -1,9 +1,8 @@
 import { createContext, useContext } from 'react'
 
 /**
- * Shared chrome state for the editor. tldraw renders our custom components
- * (Background, etc.) inside the React tree below this provider, so both the
- * dock controls and the canvas-internal components can read the same flags.
+ * Shared chrome state for the editor. The background, dock, and canvas all sit
+ * inside the React tree below this provider, so they read the same flags.
  */
 export interface BlueprintUIState {
   glow: boolean

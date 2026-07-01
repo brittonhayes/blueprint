@@ -1,34 +1,15 @@
-/* Silver-only ink + handwritten font, scoped to the editor.
+/* Silver-only ink, scoped to the editor.
 
-   Forces every color-bearing built-in shape (draw strokes, typed text) to the
-   single --ink silver. Custom shapes render their own inline silver SVG inside
-   .tl-html-container and are deliberately NOT matched here. */
+   Every shape renders its own inline silver SVG/HTML from INK_COLOR (see
+   blueprintTheme.ts), so there's no palette to override — this just pins the
+   handwritten face and guarantees no stray text shadows compete with bloom. */
 
 .bp-editor {
-  /* Typed labels and draw-font text become handwritten Caveat. */
   --tl-font-draw: var(--font-hand);
-  --tl-font-sans: var(--font-sans);
 }
 
-/* Pen strokes: perfect-freehand renders a filled outline path. White fill. */
-.bp-editor .tl-shapes .tl-svg-container path {
-  fill: var(--ink);
-}
-
-/* Typed text shapes (HTML/rich text). White, handwritten. */
-.bp-editor .tl-shapes .tl-text-label,
-.bp-editor .tl-shapes .tl-text-content,
-.bp-editor .tl-shapes .tl-rich-text,
-.bp-editor .tl-shapes .tl-rich-text-content,
-.bp-editor .tl-shapes .tl-text-input,
-.bp-editor .tl-shapes .tl-text {
-  color: var(--ink) !important;
-  fill: var(--ink) !important;
-  font-family: var(--font-hand) !important;
-  font-weight: 500 !important;
-}
-
-/* No drop-shadows on shapes — bloom is the only glow source. */
-.bp-editor .tl-shapes * {
+.bp-editor .bp-shape,
+.bp-editor .bp-shape * {
   text-shadow: none;
+  font-family: var(--font-hand);
 }

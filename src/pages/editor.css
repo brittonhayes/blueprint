@@ -1,6 +1,33 @@
 .bp-editor {
   touch-action: none;
+  overflow: hidden;
   background: var(--blue-bottom);
+}
+
+/* The interactive drawing surface — sits above the blueprint field, below the
+   chrome (dock/top bar/empty prompt). Its own hit-testing runs here. */
+.bp-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* The camera-transformed shape layer. Zero-sized with visible overflow so each
+   shape positions itself in world space; pointer-transparent so the canvas
+   receives gestures (editing text fields opt back in). */
+.bp-shapes-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.bp-shape {
+  pointer-events: none;
 }
 
 /* Empty-state invitation. Centered, faint, hand-lettered; non-interactive so
@@ -20,9 +47,4 @@
   opacity: 0.22;
   filter: var(--bloom-filter);
   user-select: none;
-}
-
-/* Keep tldraw's own canvas background transparent so our Background shows. */
-.bp-editor .tl-background {
-  background: transparent !important;
 }

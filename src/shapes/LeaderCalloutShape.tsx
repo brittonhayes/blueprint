@@ -1,173 +1,110 @@
-import {
-  ShapeUtil,
-  SVGContainer,
-  HTMLContainer,
-  Group2d,
-  Rectangle2d,
-  Edge2d,
-  Vec,
-  T,
-  type TLBaseShape,
-  type TLHandle,
-  type TLHandleDragInfo,
-  type RecordProps,
-  type IndexKey,
-} from 'tldraw'
-import { INK_COLOR } from '../canvas/blueprintTheme'
 import { chalkLinePath, hashString } from '../canvas/chalk'
+import { distToSegment, pointInBounds } from '../canvas/geometry'
+import { INK_COLOR } from '../canvas/blueprintTheme'
+import type { Bounds, Handle, LeaderCalloutShape, Vec } from '../canvas/types'
 import { EditableText } from './EditableText'
-
-export type LeaderCalloutShape = TLBaseShape<
-  'leader-callout',
-  { w: number; h: number; tx: number; ty: number; label: string }
->
+import { escapeXml, type ShapeDef } from './shared'
 
 const STROKE = 2.5
 
-/**
- * A leader: a hand-lettered label with an underline "shelf" and a line out to
- * a draggable target point with an arrowhead — like the "MAIN CROSSBEAM" and
- * "TOWERS 6' TALL" annotations on the reference plates.
- */
-export class LeaderCalloutShapeUtil extends ShapeUtil<LeaderCalloutShape> {
-  static override type = 'leader-callout' as const
-  static override props: RecordProps<LeaderCalloutShape> = {
-    w: T.number,
-    h: T.number,
-    tx: T.number,
-    ty: T.number,
-    label: T.string,
+function arrowhead(w: number, h: number, tx: number, ty: number) {
+  const ang = Math.atan2(ty - h, tx - w)
+  const a = 0.45
+  const headLen = 11
+  return {
+    ah1: { x: tx - headLen * Math.cos(ang - a), y: ty - headLen * Math.sin(ang - a) },
+    ah2: { x: tx - headLen * Math.cos(ang + a), y: ty - headLen * Math.sin(ang + a) },
   }
+}
 
-  getDefaultProps(): LeaderCalloutShape['props'] {
-    return { w: 150, h: 32, tx: 120, ty: 96, label: 'MAIN CROSSBEAM' }
-  }
+function bounds(shape: LeaderCalloutShape): Bounds {
+  const { w, h, tx, ty } = shape
+  const minX = Math.min(0, tx) - 4
+  const minY = Math.min(0, ty) - 4
+  const maxX = Math.max(w, tx) + 4
+  const maxY = Math.max(h, ty) + 4
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
+}
 
-  override canEdit() {
-    return true
-  }
-  override hideRotateHandle() {
-    return true
-  }
-  override canResize() {
-    return false
-  }
+export const leaderCalloutDef: ShapeDef<LeaderCalloutShape> = {
+  type: 'leader-callout',
+  canEdit: true,
+  getBounds: bounds,
 
-  getGeometry(shape: LeaderCalloutShape) {
-    const { w, h, tx, ty } = shape.props
-    return new Group2d({
-      children: [
-        new Rectangle2d({ x: 0, y: 0, width: w, height: h, isFilled: true }),
-        new Edge2d({ start: new Vec(w, h), end: new Vec(tx, ty) }),
-      ],
-    })
-  }
+  hitTest(shape, local: Vec) {
+    const { w, h, tx, ty } = shape
+    if (pointInBounds(local, { x: 0, y: 0, w, h })) return true
+    return distToSegment(local, { x: w, y: h }, { x: tx, y: ty }) <= 8
+  },
 
-  override getHandles(shape: LeaderCalloutShape): TLHandle[] {
-    return [
-      {
-        id: 'target',
-        type: 'vertex',
-        index: 'a1' as IndexKey,
-        x: shape.props.tx,
-        y: shape.props.ty,
-      },
-    ]
-  }
+  getHandles(shape): Handle[] {
+    return [{ id: 'target', x: shape.tx, y: shape.ty }]
+  },
 
-  override onHandleDrag(
-    shape: LeaderCalloutShape,
-    { handle }: TLHandleDragInfo<LeaderCalloutShape>,
-  ) {
-    return { ...shape, props: { ...shape.props, tx: handle.x, ty: handle.y } }
-  }
+  onHandleDrag(_shape, _handleId, local) {
+    return { tx: local.x, ty: local.y }
+  },
 
-  component(shape: LeaderCalloutShape) {
-    const { w, h, tx, ty, label } = shape.props
+  Ink({ shape }) {
+    const { w, h, tx, ty } = shape
     const seed = hashString(shape.id)
-
-    // Arrowhead at the target, pointing back along the leader.
-    const ang = Math.atan2(ty - h, tx - w)
-    const a = 0.45
-    const headLen = 11
-    const ah1 = {
-      x: tx - headLen * Math.cos(ang - a),
-      y: ty - headLen * Math.sin(ang - a),
-    }
-    const ah2 = {
-      x: tx - headLen * Math.cos(ang + a),
-      y: ty - headLen * Math.sin(ang + a),
-    }
-
+    const { ah1, ah2 } = arrowhead(w, h, tx, ty)
+    const s = { fill: 'none', stroke: INK_COLOR }
     return (
       <>
-        <SVGContainer>
-          {/* underline shelf under the label */}
-          <path
-            d={chalkLinePath({ x: 0, y: h }, { x: w, y: h }, seed + 5)}
-            style={{ fill: 'none', stroke: INK_COLOR }}
-            strokeWidth={STROKE}
-            strokeLinecap="round"
-          />
-          {/* leader line to target */}
-          <path
-            d={chalkLinePath({ x: w, y: h }, { x: tx, y: ty }, seed + 9)}
-            style={{ fill: 'none', stroke: INK_COLOR }}
-            strokeWidth={STROKE}
-            strokeLinecap="round"
-          />
-          {/* arrowhead */}
-          <path
-            d={`M ${ah1.x.toFixed(2)} ${ah1.y.toFixed(2)} L ${tx.toFixed(
-              2,
-            )} ${ty.toFixed(2)} L ${ah2.x.toFixed(2)} ${ah2.y.toFixed(2)}`}
-            style={{ fill: 'none', stroke: INK_COLOR }}
-            strokeWidth={STROKE}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </SVGContainer>
-        <HTMLContainer>
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              width: w,
-              height: h,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              padding: '0 4px',
-              pointerEvents: 'none',
-            }}
-          >
-            <EditableText
-              shapeId={shape.id}
-              value={label}
-              placeholder="LABEL"
-              align="left"
-              fontSize={22}
-              onChange={(next) =>
-                this.editor.updateShape<LeaderCalloutShape>({
-                  id: shape.id,
-                  type: 'leader-callout',
-                  props: { label: next },
-                })
-              }
-            />
-          </div>
-        </HTMLContainer>
+        <path d={chalkLinePath({ x: 0, y: h }, { x: w, y: h }, seed + 5)} style={s} strokeWidth={STROKE} strokeLinecap="round" />
+        <path d={chalkLinePath({ x: w, y: h }, { x: tx, y: ty }, seed + 9)} style={s} strokeWidth={STROKE} strokeLinecap="round" />
+        <path
+          d={`M ${ah1.x.toFixed(2)} ${ah1.y.toFixed(2)} L ${tx.toFixed(2)} ${ty.toFixed(2)} L ${ah2.x.toFixed(2)} ${ah2.y.toFixed(2)}`}
+          style={s}
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </>
     )
-  }
+  },
 
-  getIndicatorPath(shape: LeaderCalloutShape) {
-    const { w, h, tx, ty } = shape.props
-    const p = new Path2D()
-    p.rect(0, 0, w, h)
-    p.moveTo(w, h)
-    p.lineTo(tx, ty)
-    return p
-  }
+  Html({ shape, editor, editing }) {
+    const { w, h } = shape
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: w,
+          height: h,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          padding: '0 4px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <EditableText
+          value={shape.label}
+          placeholder="LABEL"
+          editing={editing}
+          align="left"
+          fontSize={22}
+          onChange={(label) => editor.updateShape(shape.id, { label }, true)}
+          onCommit={() => editor.setEditingShape(null)}
+        />
+      </div>
+    )
+  },
+
+  toExportSvg(shape) {
+    const { w, h, tx, ty, label } = shape
+    const seed = hashString(shape.id)
+    const { ah1, ah2 } = arrowhead(w, h, tx, ty)
+    const s = `fill="none" stroke="${INK_COLOR}" stroke-width="${STROKE}" stroke-linecap="round" stroke-linejoin="round"`
+    return (
+      `<path d="${chalkLinePath({ x: 0, y: h }, { x: w, y: h }, seed + 5)}" ${s}/>` +
+      `<path d="${chalkLinePath({ x: w, y: h }, { x: tx, y: ty }, seed + 9)}" ${s}/>` +
+      `<path d="M ${ah1.x.toFixed(2)} ${ah1.y.toFixed(2)} L ${tx.toFixed(2)} ${ty.toFixed(2)} L ${ah2.x.toFixed(2)} ${ah2.y.toFixed(2)}" ${s}/>` +
+      `<text x="4" y="${(h - 8).toFixed(1)}" font-family="Caveat, cursive" font-weight="500" font-size="22" fill="${INK_COLOR}">${escapeXml(label)}</text>`
+    )
+  },
 }
