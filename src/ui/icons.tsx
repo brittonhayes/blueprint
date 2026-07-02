@@ -44,6 +44,19 @@ export const DiagramIcon = ({ size = 22 }: IconProps) => (
   </svg>
 )
 
+export const SelectIcon = ({ size = 22 }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M6 3l12 10-6 1-3 6-3-17z" />
+  </svg>
+)
+
+export const RedoIcon = ({ size = 22 }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M15 7l5 5-5 5" />
+    <path d="M20 12H9a5 5 0 0 0 0 10h1" />
+  </svg>
+)
+
 export const UndoIcon = ({ size = 22 }: IconProps) => (
   <svg {...base(size)}>
     <path d="M9 7L4 12l5 5" />
@@ -70,6 +83,14 @@ export const ExportIcon = ({ size = 22 }: IconProps) => (
   <svg {...base(size)}>
     <path d="M12 15V4" />
     <path d="M8 8l4-4 4 4" />
+    <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+  </svg>
+)
+
+export const DownloadIcon = ({ size = 22 }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M12 4v11" />
+    <path d="M8 11l4 4 4-4" />
     <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
   </svg>
 )
