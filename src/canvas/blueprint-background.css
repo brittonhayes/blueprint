@@ -1,5 +1,5 @@
 /* Blueprint field: gradient + grain + optional plate frame.
-   The element fills the tldraw viewport (tldraw positions Background absolute). */
+   The element is absolutely positioned to fill the editor viewport. */
 
 .bp-bg {
   position: absolute;

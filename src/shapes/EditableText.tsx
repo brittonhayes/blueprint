@@ -1,45 +1,45 @@
 import { useEffect, useRef } from 'react'
-import { useEditor, useValue } from 'tldraw'
 
 /**
- * Minimal inline text editing for custom shapes. Shows the value as
- * hand-lettered chalk; when the shape is the editing shape, swaps in a
- * transparent textarea bound to the same props. Pointer events are stopped so
- * tldraw doesn't treat typing/selection as canvas gestures.
+ * Minimal inline text editing for shape labels.
+ *
+ * Shows the value as hand-lettered silver ink; when `editing`, swaps in a
+ * transparent textarea bound to the same value. Pointer events are stopped so
+ * the canvas doesn't treat typing or selection as a drawing gesture.
  */
 export function EditableText({
-  shapeId,
   value,
   placeholder,
+  editing,
   onChange,
+  onCommit,
   align = 'center',
   multiline = false,
   fontSize = 24,
-  className,
 }: {
-  shapeId: string
   value: string
   placeholder?: string
+  editing: boolean
   onChange: (next: string) => void
+  onCommit: () => void
   align?: 'left' | 'center'
   multiline?: boolean
   fontSize?: number
-  className?: string
 }) {
-  const editor = useEditor()
-  const editing = useValue(
-    'is-editing',
-    () => editor.getEditingShapeId() === shapeId,
-    [editor, shapeId],
-  )
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (!editing) return
-    const el = ref.current
-    if (!el) return
-    el.focus()
-    el.select()
+    // Focus after the current pointer gesture settles: focusing mid-pointerdown
+    // (as when a text shape is created by a click) can bounce straight back to
+    // the body, so we defer a frame and let the textarea keep focus.
+    const raf = requestAnimationFrame(() => {
+      const el = ref.current
+      if (!el) return
+      el.focus({ preventScroll: true })
+      el.select()
+    })
+    return () => cancelAnimationFrame(raf)
   }, [editing])
 
   const shared: React.CSSProperties = {
@@ -57,7 +57,6 @@ export function EditableText({
     return (
       <textarea
         ref={ref}
-        className={className}
         value={value}
         rows={multiline ? Math.max(1, value.split('\n').length) : 1}
         spellCheck={false}
@@ -65,12 +64,9 @@ export function EditableText({
         onPointerDown={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
-          // Let Escape bubble so tldraw exits edit mode; keep Enter for
-          // multiline blocks, otherwise commit on Enter.
-          if (e.key === 'Enter' && !multiline) {
+          if (e.key === 'Escape' || (e.key === 'Enter' && !multiline)) {
             e.preventDefault()
-            editor.setEditingShape(null)
-            editor.setSelectedShapes([])
+            onCommit()
           }
           e.stopPropagation()
         }}
@@ -95,7 +91,6 @@ export function EditableText({
 
   return (
     <div
-      className={className}
       style={{
         ...shared,
         width: '100%',

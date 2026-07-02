@@ -1,67 +1,78 @@
-import type { Editor } from 'tldraw'
-import { INK_COLOR } from '../canvas/blueprintTheme'
+import type { BlueprintEditor } from '../canvas/editor'
+import { unionBounds } from '../canvas/geometry'
+import { getShapeDef } from '../shapes'
+import { CAVEAT_URL } from '../assets/fonts'
+import type { Bounds } from '../canvas/types'
 
 interface ExportOptions {
   glow: boolean
   plateFrame: boolean
 }
 
+const PAD = 48
+const RATIO = 2
+
 /**
  * Export the current plate to PNG with the blueprint field and bloom baked in.
  *
- * tldraw's own export only knows about shapes + a flat background color, not
- * our custom React Background, so we composite by hand: render the ink to a
- * transparent PNG, then paint gradient + grain (+ frame) underneath and screen
- * a blurred, brightened copy of the ink over it to reproduce the CSS bloom.
+ * We render the ink ourselves: serialise every shape to SVG (with the Caveat
+ * face embedded so labels export faithfully), rasterise it to a transparent
+ * layer, then paint gradient + grain (+ frame) underneath and screen a blurred,
+ * brightened copy of the ink over it to reproduce the live CSS bloom.
  */
-export async function exportPng(editor: Editor, opts: ExportOptions) {
-  const ids = Array.from(editor.getCurrentPageShapeIds())
-  if (ids.length === 0) return
+export async function exportPng(editor: BlueprintEditor, opts: ExportOptions) {
+  const shapes = editor.getShapes()
+  if (shapes.length === 0) return
 
-  const result = await editor.toImage(ids, {
-    format: 'png',
-    background: false,
-    padding: 48,
-    pixelRatio: 2,
+  const worldBounds: Bounds[] = shapes.map((s) => {
+    const b = getShapeDef(s.type).getBounds(s)
+    return { x: s.x + b.x, y: s.y + b.y, w: b.w, h: b.h }
   })
+  const union = unionBounds(worldBounds)
+  if (!union) return
 
-  const ink = await blobToImage(result.blob)
-  const w = ink.naturalWidth
-  const h = ink.naturalHeight
+  const x0 = union.x - PAD
+  const y0 = union.y - PAD
+  const w = Math.ceil(union.w + PAD * 2)
+  const h = Math.ceil(union.h + PAD * 2)
+  const W = w * RATIO
+  const H = h * RATIO
 
-  // tldraw exports built-in shapes (pen strokes) in their theme color, which
-  // bypasses our live silver-ink CSS. Recolor the whole ink layer to the single
-  // silver by using the export purely as an alpha mask. Custom shapes (already
-  // silver) are unchanged; dark pen strokes become silver.
-  const inkSilver = document.createElement('canvas')
-  inkSilver.width = w
-  inkSilver.height = h
-  const wc = inkSilver.getContext('2d')!
-  wc.drawImage(ink, 0, 0)
-  wc.globalCompositeOperation = 'source-in'
-  wc.fillStyle = INK_COLOR
-  wc.fillRect(0, 0, w, h)
+  const body = shapes
+    .map(
+      (s) =>
+        `<g transform="translate(${(s.x - x0).toFixed(2)} ${(s.y - y0).toFixed(2)})">` +
+        `${getShapeDef(s.type).toExportSvg(s)}</g>`,
+    )
+    .join('')
+
+  const fontCss = await fontFaceCss()
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${w} ${h}">` +
+    `<defs><style>${fontCss}</style></defs>${body}</svg>`
+
+  const ink = await svgToImage(svg)
 
   const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
+  canvas.width = W
+  canvas.height = H
   const ctx = canvas.getContext('2d')!
 
-  paintField(ctx, w, h)
-  if (opts.plateFrame) paintFrame(ctx, w, h)
+  paintField(ctx, W, H)
+  if (opts.plateFrame) paintFrame(ctx, W, H)
 
   if (opts.glow) {
     ctx.save()
     ctx.globalCompositeOperation = 'lighter'
     ctx.filter = 'blur(7px) brightness(1.7)'
-    ctx.drawImage(inkSilver, 0, 0)
+    ctx.drawImage(ink, 0, 0)
     ctx.filter = 'blur(2px) brightness(1.5)'
-    ctx.drawImage(inkSilver, 0, 0)
+    ctx.drawImage(ink, 0, 0)
     ctx.restore()
   }
 
   // Sharp ink on top.
-  ctx.drawImage(inkSilver, 0, 0)
+  ctx.drawImage(ink, 0, 0)
 
   const out = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/png'),
@@ -82,10 +93,7 @@ function paintField(ctx: CanvasRenderingContext2D, w: number, h: number) {
   for (let i = 0; i < count; i++) {
     const x = Math.random() * w
     const y = Math.random() * h
-    const light = Math.random() > 0.5
-    ctx.fillStyle = light
-      ? 'rgba(255,255,255,0.04)'
-      : 'rgba(0,0,0,0.05)'
+    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'
     ctx.fillRect(x, y, 1.5, 1.5)
   }
 }
@@ -116,9 +124,36 @@ function paintFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
-function blobToImage(blob: Blob): Promise<HTMLImageElement> {
+let fontCssPromise: Promise<string> | null = null
+/** Inline the Caveat woff2 as a base64 @font-face so exported text renders. */
+function fontFaceCss(): Promise<string> {
+  if (!fontCssPromise) {
+    fontCssPromise = fetch(CAVEAT_URL)
+      .then((r) => r.arrayBuffer())
+      .then(
+        (buf) =>
+          `@font-face{font-family:'Caveat';font-style:normal;font-weight:400 700;` +
+          `src:url(data:font/woff2;base64,${toBase64(buf)}) format('woff2');}`,
+      )
+      .catch(() => '')
+  }
+  return fontCssPromise
+}
+
+function toBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf)
+  let binary = ''
+  const chunk = 0x8000
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  }
+  return btoa(binary)
+}
+
+function svgToImage(svg: string): Promise<HTMLImageElement> {
+  const blob = new Blob([svg], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(blob)
     const img = new Image()
     img.onload = () => {
       URL.revokeObjectURL(url)

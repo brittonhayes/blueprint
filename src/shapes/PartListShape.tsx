@@ -1,21 +1,9 @@
-import {
-  ShapeUtil,
-  SVGContainer,
-  HTMLContainer,
-  Rectangle2d,
-  useEditor,
-  useValue,
-  T,
-  type TLBaseShape,
-  type RecordProps,
-} from 'tldraw'
-import { INK_COLOR } from '../canvas/blueprintTheme'
 import { chalkLinePath, hashString } from '../canvas/chalk'
-
-export type PartListShape = TLBaseShape<
-  'part-list',
-  { w: number; title: string; items: string[] }
->
+import { pointInBounds } from '../canvas/geometry'
+import { INK_COLOR } from '../canvas/blueprintTheme'
+import type { BlueprintEditor } from '../canvas/editor'
+import type { Bounds, PartListShape } from '../canvas/types'
+import { escapeXml, type ShapeDef } from './shared'
 
 const PAD_X = 16
 const TITLE_H = 44
@@ -26,109 +14,77 @@ function listHeight(items: string[]): number {
   return TITLE_H + Math.max(1, items.length) * ROW_H + PAD_BOTTOM
 }
 
-/**
- * A titled parts block with an auto-numbering hand-lettered list — mirroring
- * the "SOLDIERS" breakdown on the Breakstep plate. Rows add/remove inline
- * while the shape is being edited.
- */
-export class PartListShapeUtil extends ShapeUtil<PartListShape> {
-  static override type = 'part-list' as const
-  static override props: RecordProps<PartListShape> = {
-    w: T.number,
-    title: T.string,
-    items: T.arrayOf(T.string),
-  }
+function bounds(shape: PartListShape): Bounds {
+  return { x: 0, y: 0, w: shape.w, h: listHeight(shape.items) }
+}
 
-  getDefaultProps(): PartListShape['props'] {
-    return {
-      w: 260,
-      title: 'SOLDIERS',
-      items: ['Boots', 'Actuators', 'Solenoids', 'Switch on timer'],
-    }
-  }
+export const partListDef: ShapeDef<PartListShape> = {
+  type: 'part-list',
+  canEdit: true,
+  getBounds: bounds,
 
-  override canEdit() {
-    return true
-  }
-  override hideRotateHandle() {
-    return true
-  }
-  override canResize() {
-    return false
-  }
+  hitTest(shape, local) {
+    return pointInBounds(local, bounds(shape))
+  },
 
-  getGeometry(shape: PartListShape) {
-    return new Rectangle2d({
-      width: shape.props.w,
-      height: listHeight(shape.props.items),
-      isFilled: true,
-    })
-  }
-
-  component(shape: PartListShape) {
-    const { w, items } = shape.props
-    const h = listHeight(items)
+  Ink({ shape }) {
     const seed = hashString(shape.id)
     return (
-      <>
-        <SVGContainer>
-          {/* title underline */}
-          <path
-            d={chalkLinePath(
-              { x: PAD_X, y: TITLE_H - 8 },
-              { x: w - PAD_X, y: TITLE_H - 8 },
-              seed + 3,
-            )}
-            style={{ fill: 'none', stroke: INK_COLOR }}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-          />
-        </SVGContainer>
-        <HTMLContainer>
-          <PartListBody shape={shape} w={w} h={h} />
-        </HTMLContainer>
-      </>
+      <path
+        d={chalkLinePath(
+          { x: PAD_X, y: TITLE_H - 8 },
+          { x: shape.w - PAD_X, y: TITLE_H - 8 },
+          seed + 3,
+        )}
+        style={{ fill: 'none', stroke: INK_COLOR }}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+      />
     )
-  }
+  },
 
-  getIndicatorPath(shape: PartListShape) {
-    const p = new Path2D()
-    p.rect(0, 0, shape.props.w, listHeight(shape.props.items))
-    return p
-  }
+  Html({ shape, editor, editing }) {
+    return <PartListBody shape={shape} editor={editor} editing={editing} />
+  },
+
+  toExportSvg(shape) {
+    const seed = hashString(shape.id)
+    const parts: string[] = [
+      `<path d="${chalkLinePath({ x: PAD_X, y: TITLE_H - 8 }, { x: shape.w - PAD_X, y: TITLE_H - 8 }, seed + 3)}" fill="none" stroke="${INK_COLOR}" stroke-width="2.5" stroke-linecap="round"/>`,
+      `<text x="${PAD_X}" y="30" font-family="Caveat, cursive" font-weight="700" font-size="28" fill="${INK_COLOR}">${escapeXml(shape.title)}</text>`,
+    ]
+    shape.items.forEach((item, i) => {
+      const y = TITLE_H + 8 + i * ROW_H + 20
+      parts.push(
+        `<text x="${PAD_X}" y="${y}" font-family="Caveat, cursive" font-weight="500" font-size="22" fill="${INK_COLOR}">${i + 1}) ${escapeXml(item)}</text>`,
+      )
+    })
+    return parts.join('')
+  },
 }
 
 function PartListBody({
   shape,
-  w,
-  h,
+  editor,
+  editing,
 }: {
   shape: PartListShape
-  w: number
-  h: number
+  editor: BlueprintEditor
+  editing: boolean
 }) {
-  const editor = useEditor()
-  const editing = useValue(
-    'editing',
-    () => editor.getEditingShapeId() === shape.id,
-    [editor, shape.id],
-  )
+  const h = listHeight(shape.items)
 
-  const update = (props: Partial<PartListShape['props']>) =>
-    editor.updateShape<PartListShape>({
-      id: shape.id,
-      type: 'part-list',
-      props,
-    })
+  const update = (patch: Partial<PartListShape>) =>
+    editor.updateShape(shape.id, patch, true)
 
   const setItem = (i: number, value: string) => {
-    const items = shape.props.items.slice()
+    const items = shape.items.slice()
     items[i] = value
     update({ items })
   }
-  const addItem = () => update({ items: [...shape.props.items, ''] })
+  const addItem = () => update({ items: [...shape.items, ''] })
   const removeItem = (i: number) =>
-    update({ items: shape.props.items.filter((_, j) => j !== i) })
+    update({ items: shape.items.filter((_, j) => j !== i) })
 
   const stop = (e: React.PointerEvent | React.TouchEvent) => e.stopPropagation()
 
@@ -137,7 +93,7 @@ function PartListBody({
       style={{
         position: 'absolute',
         inset: 0,
-        width: w,
+        width: shape.w,
         height: h,
         fontFamily: 'var(--font-hand)',
         color: INK_COLOR,
@@ -148,7 +104,7 @@ function PartListBody({
       }}
     >
       <input
-        value={shape.props.title}
+        value={shape.title}
         readOnly={!editing}
         spellCheck={false}
         onPointerDown={editing ? stop : undefined}
@@ -163,14 +119,9 @@ function PartListBody({
         }}
       />
       <div style={{ marginTop: 4 }}>
-        {shape.props.items.map((item, i) => (
-          <div
-            key={i}
-            style={{ display: 'flex', alignItems: 'center', height: ROW_H }}
-          >
-            <span
-              style={{ fontSize: 22, width: 22, flex: '0 0 auto', opacity: 0.95 }}
-            >
+        {shape.items.map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', height: ROW_H }}>
+            <span style={{ fontSize: 22, width: 22, flex: '0 0 auto', opacity: 0.95 }}>
               {i + 1})
             </span>
             <input

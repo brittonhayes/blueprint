@@ -2,7 +2,7 @@ import { useBlueprintUI } from './BlueprintContext'
 import './blueprint-background.css'
 
 /**
- * Replaces tldraw's default background. Paints the blueprint field: a subtle
+ * The blueprint field, painted behind the canvas: a subtle
  * vertical gradient between the two blues, fine paper grain so the blue never
  * reads as a clean digital fill, and — when the user toggles it on — the M5
  * "plate frame": a thin white inset border with corner registration targets.
