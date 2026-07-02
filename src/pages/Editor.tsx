@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
 
 import '../canvas/blueprint-ink.css'
 import '../bloom/bloom.css'
@@ -10,12 +10,13 @@ import { BlueprintBackground } from '../canvas/BlueprintBackground'
 import { BlueprintUIContext } from '../canvas/BlueprintContext'
 import { Dock } from '../ui/Dock'
 import { TopBar } from '../ui/TopBar'
+import { PartsBin } from '../ui/PartsBin'
 
 const PERSISTENCE_KEY = 'blueprint-default'
 
 export function Editor() {
-  const [glow, setGlow] = useState(true)
-  const [plateFrame, setPlateFrame] = useState(false)
+  // Glow is always on now that the toggle is gone.
+  const glow = true
 
   // One editor instance for the lifetime of the route; load saved plate once.
   const editor = useMemo(() => {
@@ -41,13 +42,14 @@ export function Editor() {
   }, [editor])
 
   return (
-    <BlueprintUIContext.Provider value={{ glow, setGlow, plateFrame, setPlateFrame }}>
+    <BlueprintUIContext.Provider value={{ glow }}>
       <EditorProvider editor={editor}>
         <div className="bp-editor" data-glow={glow} style={{ position: 'fixed', inset: 0 }}>
           <BlueprintBackground />
           <Canvas />
           <TopBar />
           <EmptyStatePrompt />
+          <PartsBin />
           <Dock />
         </div>
       </EditorProvider>
@@ -62,7 +64,8 @@ function EmptyStatePrompt() {
   if (!isEmpty) return null
   return (
     <div className="bp-empty" aria-hidden="true">
-      draw your first line
+      <span>draw your first line</span>
+      <span className="bp-empty__hint">or grab a part from the bin</span>
     </div>
   )
 }

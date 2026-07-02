@@ -59,9 +59,36 @@
   flex: 0 0 auto;
 }
 
-.bp-dock__popwrap {
-  position: relative;
+/* Nib size picker — appears beside the sharpie while it's the active tool. */
+.bp-dock__nibs {
   display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+  flex: 0 0 auto;
+}
+.bp-dock__nib {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: var(--dock-target);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+}
+.bp-dock__nib:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.bp-dock__nib-dot {
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+.bp-dock__nib.is-active .bp-dock__nib-dot {
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(205, 238, 255, 0.6);
 }
 
 .bp-dock__confirm {
@@ -90,34 +117,3 @@
   font-weight: 600;
 }
 
-.bp-popover {
-  z-index: 400;
-  min-width: 184px;
-  padding: 6px;
-  border-radius: var(--radius);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.bp-popover__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border: none;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  text-align: left;
-  width: 100%;
-}
-.bp-popover__item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-.bp-popover__item svg {
-  flex: 0 0 auto;
-  opacity: 0.9;
-}

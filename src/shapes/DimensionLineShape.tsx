@@ -53,10 +53,16 @@ export const dimensionLineDef: ShapeDef<DimensionLineShape> = {
 
   onHandleDrag(shape, handleId, local) {
     if (handleId === 'end') return { x2: local.x, y2: local.y }
-    // Dragging the start moves the origin and keeps the end anchored.
+    // Dragging the start moves the origin and keeps the end anchored. The
+    // origin shift is a local-space delta, so push it through the shape's
+    // rotation/scale to get the world-space translation.
+    const r = shape.rotation ?? 0
+    const k = shape.scale ?? 1
+    const cos = Math.cos(r)
+    const sin = Math.sin(r)
     return {
-      x: shape.x + local.x,
-      y: shape.y + local.y,
+      x: shape.x + (local.x * cos - local.y * sin) * k,
+      y: shape.y + (local.x * sin + local.y * cos) * k,
       x2: shape.x2 - local.x,
       y2: shape.y2 - local.y,
     }

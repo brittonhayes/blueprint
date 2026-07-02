@@ -6,6 +6,7 @@ import { textDef } from './TextShape'
 import { dimensionLineDef } from './DimensionLineShape'
 import { leaderCalloutDef } from './LeaderCalloutShape'
 import { partListDef } from './PartListShape'
+import { stencilDef } from './StencilShape'
 
 /** Every shape type the editor understands, keyed by `type`. */
 export const shapeDefs: Record<ShapeType, ShapeDef> = {
@@ -14,6 +15,7 @@ export const shapeDefs: Record<ShapeType, ShapeDef> = {
   'dimension-line': dimensionLineDef as ShapeDef,
   'leader-callout': leaderCalloutDef as ShapeDef,
   'part-list': partListDef as ShapeDef,
+  stencil: stencilDef as ShapeDef,
 }
 
 export function getShapeDef(type: ShapeType): ShapeDef {

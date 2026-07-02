@@ -26,28 +26,44 @@
   padding: 4px 6px;
 }
 
+/* The plate title — hand-lettered, editable in place. */
 .bp-topbar__title {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  opacity: 0.6;
-  pointer-events: none;
+  flex: 0 1 320px;
+  min-width: 0;
+  padding: 3px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  font-family: var(--font-hand);
+  font-weight: 500;
+  font-size: 21px;
+  text-align: center;
+  color: var(--ink);
+  opacity: 0.8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: border-color 130ms ease, opacity 130ms ease, background 130ms ease;
+}
+.bp-topbar__title:hover {
+  border-color: var(--hairline);
+  opacity: 1;
+}
+.bp-topbar__title:focus {
+  outline: none;
+  border-color: var(--hairline-strong);
+  background: var(--glass);
+  opacity: 1;
 }
 
 .bp-topbar__export {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  width: 38px;
   height: 38px;
-  padding: 0 14px;
   border-radius: 11px;
   color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 500;
 }
 .bp-topbar__export:hover {
   background: var(--glass-strong);
@@ -62,11 +78,5 @@
   }
   .bp-topbar__brand {
     font-size: 26px;
-  }
-  .bp-topbar__export span {
-    display: none;
-  }
-  .bp-topbar__export {
-    padding: 0 11px;
   }
 }

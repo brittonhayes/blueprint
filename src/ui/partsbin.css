@@ -1,0 +1,173 @@
+/* The Parts Bin — a workshop drawer on the left edge of the plate. */
+
+.bp-bin-handle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 300;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  padding: 14px 7px;
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+  color: var(--ink);
+  font-family: var(--font-hand);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+  transition: padding 140ms ease, background 140ms ease;
+}
+.bp-bin-handle:hover {
+  padding-right: 11px;
+  background: var(--glass-strong);
+}
+
+.bp-bin {
+  position: absolute;
+  left: calc(12px + var(--safe-left));
+  top: calc(62px + var(--safe-top));
+  bottom: calc(78px + var(--safe-bottom));
+  z-index: 350;
+  width: min(300px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+  animation: bp-bin-in 180ms ease-out;
+}
+@keyframes bp-bin-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-bin {
+    animation: none;
+  }
+}
+
+.bp-bin__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px 6px 16px;
+}
+.bp-bin__title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+}
+.bp-bin__close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+}
+.bp-bin__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Every category stays visible — tabs wrap rather than scroll off-screen. */
+.bp-bin__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 10px 6px;
+  flex: 0 0 auto;
+}
+.bp-bin__cat {
+  flex: 0 0 auto;
+  padding: 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+.bp-bin__cat:hover {
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 1;
+}
+.bp-bin__cat.is-active {
+  border-color: var(--hairline-strong);
+  background: rgba(255, 255, 255, 0.14);
+  opacity: 1;
+}
+
+.bp-bin__grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px 12px 14px;
+  align-content: start;
+}
+
+.bp-bin__part {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  transition: background 130ms ease, transform 120ms ease, border-color 130ms ease;
+}
+.bp-bin__part:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--hairline-strong);
+}
+.bp-bin__part:active {
+  transform: scale(0.97);
+}
+
+.bp-bin__thumb {
+  width: 76px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: var(--bloom-filter);
+}
+.bp-bin__thumb--icon svg {
+  opacity: 0.9;
+}
+
+.bp-bin__name {
+  font-family: var(--font-hand);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+/* Keyboard focus stays visible on all bin controls. */
+.bp-bin-handle:focus-visible,
+.bp-bin__close:focus-visible,
+.bp-bin__cat:focus-visible,
+.bp-bin__part:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
