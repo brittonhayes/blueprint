@@ -2,6 +2,7 @@ import { memo } from 'react'
 import type { BlueprintEditor } from './editor'
 import type { Shape } from './types'
 import { getShapeDef } from '../shapes'
+import { shapeCssTransform } from './transform'
 
 /**
  * Renders one shape into the camera-transformed layer: its silver ink (SVG in
@@ -27,7 +28,8 @@ export const ShapeView = memo(function ShapeView({
         position: 'absolute',
         left: 0,
         top: 0,
-        transform: `translate(${shape.x}px, ${shape.y}px)`,
+        transform: shapeCssTransform(shape),
+        transformOrigin: '0 0',
       }}
     >
       {def.Ink && (

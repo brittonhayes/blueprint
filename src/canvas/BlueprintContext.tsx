@@ -6,9 +6,6 @@ import { createContext, useContext } from 'react'
  */
 export interface BlueprintUIState {
   glow: boolean
-  setGlow: (v: boolean) => void
-  plateFrame: boolean
-  setPlateFrame: (v: boolean) => void
 }
 
 export const BlueprintUIContext = createContext<BlueprintUIState | null>(null)
@@ -16,13 +13,8 @@ export const BlueprintUIContext = createContext<BlueprintUIState | null>(null)
 export function useBlueprintUI(): BlueprintUIState {
   const ctx = useContext(BlueprintUIContext)
   if (!ctx) {
-    // Safe default so the Background never crashes if rendered standalone.
-    return {
-      glow: true,
-      setGlow: () => {},
-      plateFrame: false,
-      setPlateFrame: () => {},
-    }
+    // Safe default so consumers never crash if rendered standalone.
+    return { glow: true }
   }
   return ctx
 }

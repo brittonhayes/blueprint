@@ -1,4 +1,4 @@
-import { getStrokePath } from '../canvas/freehand'
+import { getStrokePath, TAPER_RATIO } from '../canvas/freehand'
 import { distToSegment } from '../canvas/geometry'
 import { INK_COLOR } from '../canvas/blueprintTheme'
 import type { Bounds, DrawShape, Vec } from '../canvas/types'
@@ -41,10 +41,16 @@ export const drawDef: ShapeDef<DrawShape> = {
   },
 
   Ink({ shape }) {
-    return <path d={getStrokePath(shape.points, { size: shape.size })} fill={INK_COLOR} />
+    return (
+      <path
+        d={getStrokePath(shape.points, { size: shape.size, taper: shape.size * TAPER_RATIO })}
+        fill={INK_COLOR}
+      />
+    )
   },
 
   toExportSvg(shape) {
-    return `<path d="${getStrokePath(shape.points, { size: shape.size })}" fill="${INK_COLOR}"/>`
+    const d = getStrokePath(shape.points, { size: shape.size, taper: shape.size * TAPER_RATIO })
+    return `<path d="${d}" fill="${INK_COLOR}"/>`
   },
 }

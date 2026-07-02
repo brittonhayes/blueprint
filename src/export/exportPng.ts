@@ -1,12 +1,12 @@
 import type { BlueprintEditor } from '../canvas/editor'
 import { unionBounds } from '../canvas/geometry'
 import { getShapeDef } from '../shapes'
+import { getWorldAABB, shapeSvgTransform } from '../canvas/transform'
 import { CAVEAT_URL } from '../assets/fonts'
-import type { Bounds } from '../canvas/types'
 
 interface ExportOptions {
   glow: boolean
-  plateFrame: boolean
+  filename?: string
 }
 
 const PAD = 48
@@ -17,18 +17,14 @@ const RATIO = 2
  *
  * We render the ink ourselves: serialise every shape to SVG (with the Caveat
  * face embedded so labels export faithfully), rasterise it to a transparent
- * layer, then paint gradient + grain (+ frame) underneath and screen a blurred,
+ * layer, then paint gradient + grain underneath and screen a blurred,
  * brightened copy of the ink over it to reproduce the live CSS bloom.
  */
 export async function exportPng(editor: BlueprintEditor, opts: ExportOptions) {
   const shapes = editor.getShapes()
   if (shapes.length === 0) return
 
-  const worldBounds: Bounds[] = shapes.map((s) => {
-    const b = getShapeDef(s.type).getBounds(s)
-    return { x: s.x + b.x, y: s.y + b.y, w: b.w, h: b.h }
-  })
-  const union = unionBounds(worldBounds)
+  const union = unionBounds(shapes.map(getWorldAABB))
   if (!union) return
 
   const x0 = union.x - PAD
@@ -41,7 +37,7 @@ export async function exportPng(editor: BlueprintEditor, opts: ExportOptions) {
   const body = shapes
     .map(
       (s) =>
-        `<g transform="translate(${(s.x - x0).toFixed(2)} ${(s.y - y0).toFixed(2)})">` +
+        `<g transform="${shapeSvgTransform(s, x0, y0)}">` +
         `${getShapeDef(s.type).toExportSvg(s)}</g>`,
     )
     .join('')
@@ -59,7 +55,6 @@ export async function exportPng(editor: BlueprintEditor, opts: ExportOptions) {
   const ctx = canvas.getContext('2d')!
 
   paintField(ctx, W, H)
-  if (opts.plateFrame) paintFrame(ctx, W, H)
 
   if (opts.glow) {
     ctx.save()
@@ -78,7 +73,7 @@ export async function exportPng(editor: BlueprintEditor, opts: ExportOptions) {
     canvas.toBlob(resolve, 'image/png'),
   )
   if (!out) return
-  downloadBlob(out, 'blueprint.png')
+  downloadBlob(out, opts.filename ?? 'blueprint.png')
 }
 
 function paintField(ctx: CanvasRenderingContext2D, w: number, h: number) {
@@ -95,32 +90,6 @@ function paintField(ctx: CanvasRenderingContext2D, w: number, h: number) {
     const y = Math.random() * h
     ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'
     ctx.fillRect(x, y, 1.5, 1.5)
-  }
-}
-
-function paintFrame(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  const inset = 40
-  ctx.strokeStyle = 'rgba(198,204,209,0.55)'
-  ctx.lineWidth = 2
-  ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2)
-
-  ctx.strokeStyle = 'rgba(198,204,209,0.7)'
-  const targets: Array<[number, number]> = [
-    [inset, inset],
-    [w - inset, inset],
-    [inset, h - inset],
-    [w - inset, h - inset],
-  ]
-  const r = 16
-  const arm = 26
-  for (const [cx, cy] of targets) {
-    ctx.beginPath()
-    ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.moveTo(cx - arm, cy)
-    ctx.lineTo(cx + arm, cy)
-    ctx.moveTo(cx, cy - arm)
-    ctx.lineTo(cx, cy + arm)
-    ctx.stroke()
   }
 }
 

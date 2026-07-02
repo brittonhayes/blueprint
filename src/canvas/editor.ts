@@ -43,7 +43,7 @@ export class BlueprintEditor {
   private shapes: Shape[] = []
   private camera: Camera = { x: 0, y: 0, z: 1 }
   private tool: ToolId = 'draw'
-  private selectedId: string | null = null
+  private selectedIds: string[] = []
   private editingId: string | null = null
 
   private undoStack: Shape[][] = []
@@ -69,7 +69,7 @@ export class BlueprintEditor {
       shapes: this.shapes,
       camera: this.camera,
       tool: this.tool,
-      selectedId: this.selectedId,
+      selectedIds: this.selectedIds,
       editingId: this.editingId,
     }
   }
@@ -120,12 +120,20 @@ export class BlueprintEditor {
   // ── Tools ─────────────────────────────────────────────────────────────
   getCurrentToolId = (): ToolId => this.tool
 
+  /** Nominal sharpie nib diameter in world px (fine / standard / broad). */
+  private strokeSize = 5
+  getStrokeSize = (): number => this.strokeSize
+  setStrokeSize(size: number) {
+    this.strokeSize = size
+    this.emit(false)
+  }
+
   setCurrentTool(tool: ToolId) {
     this.tool = tool
     // Leaving a text tool while editing commits the edit.
     if (tool !== 'select') {
       this.editingId = null
-      this.selectedId = null
+      this.selectedIds = []
     }
     this.emit(false)
   }
@@ -162,12 +170,30 @@ export class BlueprintEditor {
     this.emit()
   }
 
+  /**
+   * Patch several shapes in one pass — the group move/rotate/scale gestures use
+   * this so a single frame is one render and (when not ephemeral) one undo step.
+   */
+  updateShapes(
+    patches: Array<{ id: string; patch: Partial<Shape> }>,
+    ephemeral = false,
+  ) {
+    if (patches.length === 0) return
+    if (!ephemeral) this.mark()
+    const map = new Map(patches.map((p) => [p.id, p.patch]))
+    this.shapes = this.shapes.map((s) => {
+      const patch = map.get(s.id)
+      return patch ? ({ ...s, ...patch } as Shape) : s
+    })
+    this.emit()
+  }
+
   deleteShapes(ids: string[]) {
     if (ids.length === 0) return
     this.mark()
     const set = new Set(ids)
     this.shapes = this.shapes.filter((s) => !set.has(s.id))
-    if (this.selectedId && set.has(this.selectedId)) this.selectedId = null
+    this.selectedIds = this.selectedIds.filter((id) => !set.has(id))
     if (this.editingId && set.has(this.editingId)) this.editingId = null
     this.emit()
   }
@@ -176,7 +202,7 @@ export class BlueprintEditor {
     if (this.shapes.length === 0) return
     this.mark()
     this.shapes = []
-    this.selectedId = null
+    this.selectedIds = []
     this.editingId = null
     this.emit()
   }
@@ -185,7 +211,7 @@ export class BlueprintEditor {
   eraseShape(id: string) {
     if (!this.shapes.some((s) => s.id === id)) return
     this.shapes = this.shapes.filter((s) => s.id !== id)
-    if (this.selectedId === id) this.selectedId = null
+    this.selectedIds = this.selectedIds.filter((sid) => sid !== id)
     if (this.editingId === id) this.editingId = null
     this.emit()
   }
@@ -199,25 +225,52 @@ export class BlueprintEditor {
   }
 
   // ── Selection / editing ───────────────────────────────────────────────
-  getSelectedId = (): string | null => this.selectedId
+  getSelectedIds = (): string[] => this.selectedIds
+  /** The sole selected shape id, or null when zero or multiple are selected. */
+  getSelectedId = (): string | null =>
+    this.selectedIds.length === 1 ? this.selectedIds[0] : null
   getEditingShapeId = (): string | null => this.editingId
 
+  /** Replace the selection with a single shape (or clear it). */
   select(id: string | null) {
-    this.selectedId = id
+    this.selectedIds = id ? [id] : []
     if (id === null) this.editingId = null
+    this.emit(false)
+  }
+
+  /** Replace the selection with an explicit set of shape ids. */
+  setSelectedIds(ids: string[]) {
+    this.selectedIds = [...ids]
+    if (ids.length !== 1 || ids[0] !== this.editingId) this.editingId = null
+    this.emit(false)
+  }
+
+  /** Add or remove one shape from the current selection (shift-click). */
+  toggleSelected(id: string) {
+    this.selectedIds = this.selectedIds.includes(id)
+      ? this.selectedIds.filter((s) => s !== id)
+      : [...this.selectedIds, id]
+    this.editingId = null
+    this.emit(false)
+  }
+
+  /** Select every shape on the page. */
+  selectAll() {
+    this.selectedIds = this.shapes.map((s) => s.id)
+    this.editingId = null
     this.emit(false)
   }
 
   setEditingShape(id: string | null) {
     const prev = this.editingId
     this.editingId = id
-    if (id) this.selectedId = id
+    if (id) this.selectedIds = [id]
     // An abandoned, still-empty text label is noise — drop it on commit.
     if (prev && prev !== id) {
       const s = this.getShape(prev)
       if (s && s.type === 'text' && !s.text.trim()) {
         this.shapes = this.shapes.filter((x) => x.id !== prev)
-        if (this.selectedId === prev) this.selectedId = null
+        this.selectedIds = this.selectedIds.filter((sid) => sid !== prev)
       }
     }
     this.emit()
@@ -229,7 +282,7 @@ export class BlueprintEditor {
     if (!prev) return
     this.redoStack.push(cloneShapes(this.shapes))
     this.shapes = prev
-    this.selectedId = null
+    this.selectedIds = []
     this.editingId = null
     this.emit()
   }
@@ -239,7 +292,7 @@ export class BlueprintEditor {
     if (!next) return
     this.undoStack.push(cloneShapes(this.shapes))
     this.shapes = next
-    this.selectedId = null
+    this.selectedIds = []
     this.editingId = null
     this.emit()
   }

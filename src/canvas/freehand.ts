@@ -13,6 +13,9 @@ import type { StrokePoint } from './types'
  * with rounded end caps → emit a smoothed SVG path.
  */
 
+/** Taper length at the stroke tips, relative to the nib size. */
+export const TAPER_RATIO = 1.6
+
 interface Options {
   /** Nominal stroke diameter in px. */
   size?: number
@@ -20,6 +23,8 @@ interface Options {
   thinning?: number
   /** Smoothing factor for the input samples (0..1). */
   streamline?: number
+  /** Taper length at each tip in px (0 = blunt caps). */
+  taper?: number
 }
 
 interface P {
@@ -72,7 +77,7 @@ function circlePath(cx: number, cy: number, r: number): string {
 /** Build a smoothed SVG fill path for a freehand stroke. */
 export function getStrokePath(
   raw: StrokePoint[],
-  { size = 6, thinning = 0.55, streamline: sl = 0.5 }: Options = {},
+  { size = 6, thinning = 0.55, streamline: sl = 0.5, taper = 0 }: Options = {},
 ): string {
   const input = dedupe(raw.map((pt) => ({ x: pt.x, y: pt.y, p: pt.p })))
   if (input.length === 0) return ''
@@ -90,6 +95,23 @@ export function getStrokePath(
   }
 
   const pts = streamline(input, sl)
+
+  // Cumulative arc length per point, so the tips can taper by distance
+  // travelled rather than by sample count (samples cluster when moving slowly).
+  const arc: number[] = [0]
+  for (let i = 1; i < pts.length; i++) {
+    arc.push(arc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
+  }
+  const total = arc[arc.length - 1]
+  // A stroke shorter than both tapers combined still deserves a visible body.
+  const tip = Math.min(taper, total / 2.5)
+  const taperScale = (d: number) => {
+    if (tip <= 0) return 1
+    const t = Math.min(1, Math.min(d, total - d) / tip)
+    // Ease-out so the tip comes to a marker-like point, not a cone.
+    return 0.12 + 0.88 * Math.sin((t * Math.PI) / 2)
+  }
+
   const left: [number, number][] = []
   const right: [number, number][] = []
 
@@ -105,7 +127,7 @@ export function getStrokePath(
     // Left normal.
     const nx = -dy
     const ny = dx
-    const r = radius(cur.p)
+    const r = radius(cur.p) * taperScale(arc[i])
     left.push([cur.x + nx * r, cur.y + ny * r])
     right.push([cur.x - nx * r, cur.y - ny * r])
   }
